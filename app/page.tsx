@@ -1,101 +1,172 @@
+"use client";
+
+import {
+  APIProvider,
+  Map,
+  AdvancedMarker,
+  useMap,
+} from "@vis.gl/react-google-maps";
+import { Marker, MarkerClusterer } from "@googlemaps/markerclusterer";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+
+const API_KEY = "AIzaSyAIceB8-w-tSsn_JwRfRUuuPBQie_ri8zs";
+
+interface Poi {
+  key: string;
+  location: { lat: number; lng: number };
+}
+
+const PoiMarkers = (props: { pois: Poi[] }) => {
+  const map = useMap();
+  const [markers, setMarkers] = useState<{ [key: string]: Marker }>({});
+  const clusterer = useRef<MarkerClusterer | null>(null);
+
+  const icon = {
+    url: "big-cluster.png",
+    scaledSize: new google.maps.Size(40, 40),
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const renderer = {
+    render({
+      count,
+      position,
+    }: {
+      count: number;
+      position: google.maps.LatLng;
+    }) {
+      return new google.maps.Marker({
+        label: { text: String(count), color: "white", fontSize: "10px" },
+        position,
+        icon,
+        // adjust zIndex to be above other markers
+        zIndex: Number(google.maps.Marker.MAX_ZINDEX) + count,
+      });
+    },
+  };
+
+  // Initialize MarkerClusterer, if the map has changed
+  useEffect(() => {
+    if (!map) return;
+    if (!clusterer.current) {
+      clusterer.current = new MarkerClusterer({ map, renderer });
+    }
+  }, [map, renderer]);
+
+  // Update markers, if the markers array has changed
+  useEffect(() => {
+    clusterer.current?.clearMarkers();
+    clusterer.current?.addMarkers(Object.values(markers));
+  }, [markers]);
+
+  const setMarkerRef = (marker: Marker | null, key: string) => {
+    if (marker && markers[key]) return;
+    if (!marker && !markers[key]) return;
+
+    setMarkers((prev) => {
+      if (marker) {
+        return { ...prev, [key]: marker };
+      } else {
+        const newMarkers = { ...prev };
+        delete newMarkers[key];
+        return newMarkers;
+      }
+    });
+  };
+
+  return (
+    <>
+      {props.pois.map((poi: Poi) => (
+        <AdvancedMarker
+          key={poi.key}
+          position={poi.location}
+          ref={(marker) => setMarkerRef(marker, poi.key)}
+        >
+          <Image
+            alt="hey-world"
+            width="20"
+            height="20"
+            src="/small-cluster.png"
+          />
+        </AdvancedMarker>
+      ))}
+    </>
+  );
+};
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+    <APIProvider apiKey={API_KEY}>
+      <Map
+        mapId="6d981d098c150f99"
+        style={{ width: "100vw", height: "100vh" }}
+        defaultCenter={{ lat: -33.8567844, lng: 151.213108 }}
+        defaultZoom={12}
+        gestureHandling={"greedy"}
+      >
+        <PoiMarkers
+          pois={[
+            {
+              key: "operaHouse",
+              location: { lat: -33.8567844, lng: 151.213108 },
+            },
+            {
+              key: "tarongaZoo",
+              location: { lat: -33.8472767, lng: 151.2188164 },
+            },
+            {
+              key: "manlyBeach",
+              location: { lat: -33.8209738, lng: 151.2563253 },
+            },
+            {
+              key: "hyderPark",
+              location: { lat: -33.8690081, lng: 151.2052393 },
+            },
+            {
+              key: "theRocks",
+              location: { lat: -33.8587568, lng: 151.2058246 },
+            },
+            {
+              key: "circularQuay",
+              location: { lat: -33.858761, lng: 151.2055688 },
+            },
+            {
+              key: "harbourBridge",
+              location: { lat: -33.852228, lng: 151.2038374 },
+            },
+            {
+              key: "kingsCross",
+              location: { lat: -33.8737375, lng: 151.222569 },
+            },
+            {
+              key: "botanicGardens",
+              location: { lat: -33.864167, lng: 151.216387 },
+            },
+            {
+              key: "museumOfSydney",
+              location: { lat: -33.8636005, lng: 151.2092542 },
+            },
+            {
+              key: "maritimeMuseum",
+              location: { lat: -33.869395, lng: 151.198648 },
+            },
+            {
+              key: "kingStreetWharf",
+              location: { lat: -33.8665445, lng: 151.1989808 },
+            },
+            { key: "aquarium", location: { lat: -33.869627, lng: 151.202146 } },
+            {
+              key: "darlingHarbour",
+              location: { lat: -33.87488, lng: 151.1987113 },
+            },
+            {
+              key: "barangaroo",
+              location: { lat: -33.8605523, lng: 151.1972205 },
+            },
+          ]}
         />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </Map>
+    </APIProvider>
   );
 }
