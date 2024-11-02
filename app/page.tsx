@@ -7,7 +7,7 @@ import {
   useMap,
 } from "@vis.gl/react-google-maps";
 import { Marker, MarkerClusterer } from "@googlemaps/markerclusterer";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
 const API_KEY = "AIzaSyAIceB8-w-tSsn_JwRfRUuuPBQie_ri8zs";
@@ -21,6 +21,8 @@ const PoiMarkers = (props: { pois: Poi[] }) => {
   const map = useMap();
   const [markers, setMarkers] = useState<{ [key: string]: Marker }>({});
   const clusterer = useRef<MarkerClusterer | null>(null);
+  const [selectedMarker, setSelectedMarker] =
+    useState<google.maps.LatLng | null>(null);
 
   const icon = {
     url: "big-cluster.png",
@@ -37,7 +39,7 @@ const PoiMarkers = (props: { pois: Poi[] }) => {
       position: google.maps.LatLng;
     }) {
       return new google.maps.Marker({
-        label: { text: String(count), color: "white", fontSize: "10px" },
+        label: { text: String(count), color: "white", fontSize: "15px" },
         position,
         icon,
         // adjust zIndex to be above other markers
@@ -45,6 +47,23 @@ const PoiMarkers = (props: { pois: Poi[] }) => {
       });
     },
   };
+
+  // const bounds = map?.getBounds();
+
+  // // console log the presented markers when zooming in/out
+  // useEffect(() => {
+  //   if (!map) return;
+  //   if (!bounds) return;
+  //   if (Object.keys(markers).length === 0) return;
+
+  //   console.log(markers);
+
+  //   // console log all markers inside the current bounds
+  //   const visibleMarkers = Object.keys(markers).filter((marker) => {
+  //     const position = markers[marker].getPosition();
+  //     return bounds.contains(position);
+  //   });
+  // }, [bounds]);
 
   // Initialize MarkerClusterer, if the map has changed
   useEffect(() => {
@@ -75,6 +94,22 @@ const PoiMarkers = (props: { pois: Poi[] }) => {
     });
   };
 
+  const handleClick = useCallback(
+    (ev: google.maps.MapMouseEvent) => {
+      if (!map) return;
+      if (!ev.latLng) return;
+
+      setSelectedMarker(ev.latLng);
+      // console.log("marker clicked:", ev.latLng.toString());
+      map.panTo(ev.latLng);
+    },
+    [map]
+  );
+
+  const isPoiSelected = (poi: Poi) =>
+    selectedMarker?.toJSON().lat === poi.location.lat &&
+    selectedMarker?.toJSON().lng === poi.location.lng;
+
   return (
     <>
       {props.pois.map((poi: Poi) => (
@@ -82,6 +117,12 @@ const PoiMarkers = (props: { pois: Poi[] }) => {
           key={poi.key}
           position={poi.location}
           ref={(marker) => setMarkerRef(marker, poi.key)}
+          onClick={handleClick}
+          style={{
+            borderWidth: isPoiSelected(poi) ? 5 : 0,
+            borderRadius: "50%",
+            borderColor: "#FFDC0A",
+          }}
         >
           <Image
             alt="hey-world"
