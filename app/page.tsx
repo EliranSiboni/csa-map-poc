@@ -17,6 +17,66 @@ interface Poi {
   location: { lat: number; lng: number };
 }
 
+const allMarkers = [
+  {
+    key: "operaHouse",
+    location: { lat: -33.8567844, lng: 151.213108 },
+  },
+  {
+    key: "tarongaZoo",
+    location: { lat: -33.8472767, lng: 151.2188164 },
+  },
+  {
+    key: "manlyBeach",
+    location: { lat: -33.8209738, lng: 151.2563253 },
+  },
+  {
+    key: "hyderPark",
+    location: { lat: -33.8690081, lng: 151.2052393 },
+  },
+  {
+    key: "theRocks",
+    location: { lat: -33.8587568, lng: 151.2058246 },
+  },
+  {
+    key: "circularQuay",
+    location: { lat: -33.858761, lng: 151.2055688 },
+  },
+  {
+    key: "harbourBridge",
+    location: { lat: -33.852228, lng: 151.2038374 },
+  },
+  {
+    key: "kingsCross",
+    location: { lat: -33.8737375, lng: 151.222569 },
+  },
+  {
+    key: "botanicGardens",
+    location: { lat: -33.864167, lng: 151.216387 },
+  },
+  {
+    key: "museumOfSydney",
+    location: { lat: -33.8636005, lng: 151.2092542 },
+  },
+  {
+    key: "maritimeMuseum",
+    location: { lat: -33.869395, lng: 151.198648 },
+  },
+  {
+    key: "kingStreetWharf",
+    location: { lat: -33.8665445, lng: 151.1989808 },
+  },
+  { key: "aquarium", location: { lat: -33.869627, lng: 151.202146 } },
+  {
+    key: "darlingHarbour",
+    location: { lat: -33.87488, lng: 151.1987113 },
+  },
+  {
+    key: "barangaroo",
+    location: { lat: -33.8605523, lng: 151.1972205 },
+  },
+];
+
 const PoiMarkers = (props: { pois: Poi[] }) => {
   const map = useMap();
   const [markers, setMarkers] = useState<{ [key: string]: Marker }>({});
@@ -48,26 +108,10 @@ const PoiMarkers = (props: { pois: Poi[] }) => {
     },
   };
 
-  // const bounds = map?.getBounds();
-
-  // // console log the presented markers when zooming in/out
-  // useEffect(() => {
-  //   if (!map) return;
-  //   if (!bounds) return;
-  //   if (Object.keys(markers).length === 0) return;
-
-  //   console.log(markers);
-
-  //   // console log all markers inside the current bounds
-  //   const visibleMarkers = Object.keys(markers).filter((marker) => {
-  //     const position = markers[marker].getPosition();
-  //     return bounds.contains(position);
-  //   });
-  // }, [bounds]);
-
   // Initialize MarkerClusterer, if the map has changed
   useEffect(() => {
     if (!map) return;
+
     if (!clusterer.current) {
       clusterer.current = new MarkerClusterer({ map, renderer });
     }
@@ -136,9 +180,28 @@ const PoiMarkers = (props: { pois: Poi[] }) => {
   );
 };
 
-export default function Home() {
+const GoogleMap = () => {
+  const map = useMap();
+  const [visibleMarkers, setVisibleMarkers] = useState<Poi[]>([]);
+
+  map?.addListener("bounds_changed", () => {
+    const bounds = map?.getBounds();
+    if (!bounds) return;
+
+    const visibleMarkers = allMarkers.filter((marker) => {
+      // show only if the marker is inside the boundries
+      const markerPosition = new google.maps.LatLng(
+        marker.location.lat,
+        marker.location.lng
+      );
+      return bounds.contains(markerPosition);
+    });
+
+    setVisibleMarkers(visibleMarkers);
+  });
+
   return (
-    <APIProvider apiKey={API_KEY}>
+    <>
       <Map
         mapId="6d981d098c150f99"
         style={{ width: "100vw", height: "100vh" }}
@@ -146,68 +209,43 @@ export default function Home() {
         defaultZoom={12}
         gestureHandling={"greedy"}
       >
-        <PoiMarkers
-          pois={[
-            {
-              key: "operaHouse",
-              location: { lat: -33.8567844, lng: 151.213108 },
-            },
-            {
-              key: "tarongaZoo",
-              location: { lat: -33.8472767, lng: 151.2188164 },
-            },
-            {
-              key: "manlyBeach",
-              location: { lat: -33.8209738, lng: 151.2563253 },
-            },
-            {
-              key: "hyderPark",
-              location: { lat: -33.8690081, lng: 151.2052393 },
-            },
-            {
-              key: "theRocks",
-              location: { lat: -33.8587568, lng: 151.2058246 },
-            },
-            {
-              key: "circularQuay",
-              location: { lat: -33.858761, lng: 151.2055688 },
-            },
-            {
-              key: "harbourBridge",
-              location: { lat: -33.852228, lng: 151.2038374 },
-            },
-            {
-              key: "kingsCross",
-              location: { lat: -33.8737375, lng: 151.222569 },
-            },
-            {
-              key: "botanicGardens",
-              location: { lat: -33.864167, lng: 151.216387 },
-            },
-            {
-              key: "museumOfSydney",
-              location: { lat: -33.8636005, lng: 151.2092542 },
-            },
-            {
-              key: "maritimeMuseum",
-              location: { lat: -33.869395, lng: 151.198648 },
-            },
-            {
-              key: "kingStreetWharf",
-              location: { lat: -33.8665445, lng: 151.1989808 },
-            },
-            { key: "aquarium", location: { lat: -33.869627, lng: 151.202146 } },
-            {
-              key: "darlingHarbour",
-              location: { lat: -33.87488, lng: 151.1987113 },
-            },
-            {
-              key: "barangaroo",
-              location: { lat: -33.8605523, lng: 151.1972205 },
-            },
-          ]}
-        />
+        <PoiMarkers pois={allMarkers} />
       </Map>
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          display: "flex",
+          flexWrap: "nowrap",
+          overflowX: "auto",
+          width: "90vw",
+        }}
+      >
+        {visibleMarkers.map((marker) => (
+          <div
+            style={{
+              margin: 5,
+              width: 250,
+              height: 100,
+              backgroundColor: "white",
+              flex: "0 0 auto",
+              color: "black",
+              textAlign: "center",
+            }}
+            key={marker.key}
+          >
+            {marker.key}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+};
+
+export default function Home() {
+  return (
+    <APIProvider apiKey={API_KEY}>
+      <GoogleMap />
     </APIProvider>
   );
 }
